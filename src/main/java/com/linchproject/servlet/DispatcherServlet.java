@@ -13,7 +13,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Map;
 
 /**
  * @author Georg Schmidl
@@ -49,13 +48,16 @@ public class DispatcherServlet extends HttpServlet {
             throw new ServletException("cannot find renderer " + rendererClassName, e);
         }
 
+        UrlBuilder urlBuilder = new ServletUrlBuilder(req.getContextPath());
+
         Container container = Container.getInstance();
+        container.add("urlBuilder", urlBuilder);
         container.add("renderer", rendererClass);
 
         Invoker invoker = new Invoker(getClass().getClassLoader(), this.controllerPackage);
         Result result = invoker.invoke(route);
 
-        apply(result, req, resp);
+        apply(result, urlBuilder, req, resp);
     }
 
     protected Route getRoute(HttpServletRequest req) {
@@ -74,7 +76,7 @@ public class DispatcherServlet extends HttpServlet {
         return route;
     }
 
-    protected void apply(Result result, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void apply(Result result, UrlBuilder urlBuilder, HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (result instanceof Success) {
             Success success = (Success) result;
 
@@ -86,7 +88,7 @@ public class DispatcherServlet extends HttpServlet {
             Redirect redirect = (Redirect) result;
             Route route = redirect.getRoute();
 
-            resp.sendRedirect(getLocation(route));
+            resp.sendRedirect(urlBuilder.buildUrl(route));
         } else if (result instanceof Error) {
             Error error = (Error) result;
 
@@ -102,27 +104,6 @@ public class DispatcherServlet extends HttpServlet {
 
             resp.getWriter().println(content);
         }
-    }
-
-    protected String getLocation(Route route) {
-        String queryString = getQueryString(route.getParams().getMap());
-        return "/" + route.getController() + "/" + route.getAction() + queryString;
-    }
-
-    private String getQueryString(Map<String, String[]> map) {
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String[]> entry : map.entrySet()) {
-            String key = entry.getKey();
-            for (String value : entry.getValue()) {
-                if (sb.length() > 0) {
-                    sb.append("&");
-                }
-                sb.append(key);
-                sb.append("=");
-                sb.append(value);
-            }
-        }
-        return sb.length() > 0? "?" + sb.toString(): "";
     }
 
     protected String renderException(Exception e) {
