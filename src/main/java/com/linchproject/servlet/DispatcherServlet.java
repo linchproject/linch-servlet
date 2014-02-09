@@ -1,7 +1,6 @@
 package com.linchproject.servlet;
 
 import com.linchproject.core.*;
-import com.linchproject.core.renderer.MustacheRenderer;
 import com.linchproject.core.results.Error;
 import com.linchproject.core.results.Redirect;
 import com.linchproject.core.results.Success;
@@ -22,10 +21,12 @@ import java.util.Map;
 public class DispatcherServlet extends HttpServlet {
 
     private String controllerPackage;
+    private String rendererClassName;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         this.controllerPackage = config.getInitParameter("controllerPackage");
+        this.rendererClassName = config.getInitParameter("rendererClassName");
     }
 
     @Override
@@ -38,11 +39,18 @@ public class DispatcherServlet extends HttpServlet {
         dispatch(req, resp);
     }
 
-    protected void dispatch(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void dispatch(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
         Route route = getRoute(req);
 
+        Class<?> rendererClass;
+        try {
+            rendererClass = getClass().getClassLoader().loadClass(rendererClassName);
+        } catch (ClassNotFoundException e) {
+            throw new ServletException("cannot find renderer " + rendererClassName, e);
+        }
+
         Container container = Container.getInstance();
-        container.add("renderer", MustacheRenderer.class);
+        container.add("renderer", rendererClass);
 
         Invoker invoker = new Invoker(getClass().getClassLoader(), this.controllerPackage);
         Result result = invoker.invoke(route);
