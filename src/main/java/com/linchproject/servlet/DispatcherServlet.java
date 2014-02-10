@@ -19,13 +19,24 @@ import java.io.StringWriter;
  */
 public class DispatcherServlet extends HttpServlet {
 
-    private String controllerPackage;
-    private String rendererClassName;
+    private Invoker invoker;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        this.controllerPackage = config.getInitParameter("controllerPackage");
-        this.rendererClassName = config.getInitParameter("rendererClassName");
+        String controllerPackage = config.getInitParameter("controllerPackage");
+        String rendererClassName = config.getInitParameter("rendererClassName");
+
+        Class<?> rendererClass;
+        try {
+            rendererClass = getClass().getClassLoader().loadClass(rendererClassName);
+        } catch (ClassNotFoundException e) {
+            throw new ServletException("cannot find renderer " + rendererClassName, e);
+        }
+
+        Container container = Container.getInstance();
+        container.add("renderer", rendererClass);
+
+        this.invoker = new Invoker(getClass().getClassLoader(), controllerPackage);
     }
 
     @Override
@@ -41,27 +52,13 @@ public class DispatcherServlet extends HttpServlet {
     protected void dispatch(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
         Route route = getRoute(req);
 
-        Class<?> rendererClass;
-        try {
-            rendererClass = getClass().getClassLoader().loadClass(rendererClassName);
-        } catch (ClassNotFoundException e) {
-            throw new ServletException("cannot find renderer " + rendererClassName, e);
-        }
-
-        UrlBuilder urlBuilder = new ServletUrlBuilder(req.getContextPath());
-
-        Container container = Container.getInstance();
-        container.add("urlBuilder", urlBuilder);
-        container.add("renderer", rendererClass);
-
-        Invoker invoker = new Invoker(getClass().getClassLoader(), this.controllerPackage);
         Result result = invoker.invoke(route);
 
-        apply(result, urlBuilder, req, resp);
+        apply(result, req, resp);
     }
 
     protected Route getRoute(HttpServletRequest req) {
-        Route route = new Route();
+        Route route = new ServletRoute(req.getContextPath());
 
         String uri = req.getRequestURI().substring(req.getContextPath().length());
         String[] uriSplit = uri.split("/");
@@ -76,7 +73,7 @@ public class DispatcherServlet extends HttpServlet {
         return route;
     }
 
-    protected void apply(Result result, UrlBuilder urlBuilder, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void apply(Result result, HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (result instanceof Success) {
             Success success = (Success) result;
 
@@ -88,7 +85,7 @@ public class DispatcherServlet extends HttpServlet {
             Redirect redirect = (Redirect) result;
             Route route = redirect.getRoute();
 
-            resp.sendRedirect(urlBuilder.buildUrl(route));
+            resp.sendRedirect(route.getUrl());
         } else if (result instanceof Error) {
             Error error = (Error) result;
 

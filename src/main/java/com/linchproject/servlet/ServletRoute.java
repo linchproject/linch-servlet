@@ -1,27 +1,26 @@
 package com.linchproject.servlet;
 
 import com.linchproject.core.Route;
-import com.linchproject.core.UrlBuilder;
 
 import java.util.Map;
 
 /**
  * @author Georg Schmidl
  */
-public class ServletUrlBuilder implements UrlBuilder {
+public class ServletRoute extends Route {
 
-    private String contextPath;
+    public String contextPath;
 
-    public ServletUrlBuilder(String contextPath) {
+    public ServletRoute(String contextPath) {
         this.contextPath = contextPath;
     }
 
     @Override
-    public String buildUrl(Route route) {
-        String queryString = getQueryString(route.getParams().getMap());
+    public String getUrl() {
+        String queryString = getQueryString(getParams().getMap());
         return this.contextPath
-                + "/" + route.getController()
-                + "/" + route.getAction()
+                + "/" + getController()
+                + "/" + getAction()
                 + queryString;
     }
 
@@ -39,5 +38,10 @@ public class ServletUrlBuilder implements UrlBuilder {
             }
         }
         return sb.length() > 0? "?" + sb.toString(): "";
+    }
+
+    @Override
+    protected Route newRoute() {
+        return new ServletRoute(this.contextPath);
     }
 }
