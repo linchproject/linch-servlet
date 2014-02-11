@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Enumeration;
+import java.util.Properties;
 
 /**
  * @author Georg Schmidl
@@ -23,20 +25,37 @@ public class DispatcherServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        String controllerPackage = config.getInitParameter("controllerPackage");
-        String rendererClassName = config.getInitParameter("rendererClassName");
+        ClassLoader classLoader = getClass().getClassLoader();
 
-        Class<?> rendererClass;
+        Properties appConfig = new Properties();
         try {
-            rendererClass = getClass().getClassLoader().loadClass(rendererClassName);
-        } catch (ClassNotFoundException e) {
-            throw new ServletException("cannot find renderer " + rendererClassName, e);
+            appConfig.load(classLoader.getResourceAsStream("app.properties"));
+        } catch (IOException e) {
+            throw new ServletException("app.properties missing", e);
         }
 
-        Container container = Container.getInstance();
-        container.add("renderer", rendererClass);
+        String controllerPackage = appConfig.getProperty("controllerPackage");
 
-        this.invoker = new Invoker(getClass().getClassLoader(), controllerPackage);
+
+        Container container = Container.getInstance();
+
+        Enumeration<?> enumeration = appConfig.propertyNames();
+        while (enumeration.hasMoreElements()) {
+            String key = (String) enumeration.nextElement();
+
+            if (key.startsWith("component.")) {
+                String componentKey = key.substring(key.indexOf(".") + 1, key.length());
+                Class<?> componentClass;
+                try {
+                    componentClass = classLoader.loadClass(appConfig.getProperty(key));
+                } catch (ClassNotFoundException e) {
+                    throw new ServletException("class not found for component " + componentKey, e);
+                }
+                container.add(componentKey, componentClass);
+            }
+        }
+
+        this.invoker = new Invoker(classLoader, controllerPackage);
     }
 
     @Override
