@@ -37,7 +37,7 @@ public class DispatcherServlet extends HttpServlet {
         String controllerPackage = appConfig.getProperty("controllerPackage");
 
 
-        Container container = Container.getInstance();
+        Container container = new Container();
 
         Enumeration<?> enumeration = appConfig.propertyNames();
         while (enumeration.hasMoreElements()) {
@@ -55,7 +55,7 @@ public class DispatcherServlet extends HttpServlet {
             }
         }
 
-        this.invoker = new Invoker(classLoader, controllerPackage);
+        this.invoker = new Invoker(classLoader, controllerPackage, container);
     }
 
     @Override
