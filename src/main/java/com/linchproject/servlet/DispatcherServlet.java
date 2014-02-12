@@ -88,7 +88,7 @@ public class DispatcherServlet extends HttpServlet {
             route.setAction(uriSplit[1]);
         }
 
-        route.setParams(new Params(req.getParameterMap()));
+        route.setParameterMap(req.getParameterMap());
         return route;
     }
 

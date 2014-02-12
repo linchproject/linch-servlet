@@ -17,7 +17,7 @@ public class ServletRoute extends Route {
 
     @Override
     public String getUrl() {
-        String queryString = getQueryString(getParams().getMap());
+        String queryString = getQueryString(getParameterMap());
         return this.contextPath
                 + "/" + getController()
                 + "/" + getAction()
