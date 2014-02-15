@@ -23,6 +23,9 @@ import java.util.Properties;
  */
 public class DispatcherServlet extends HttpServlet {
 
+    private static final String APP_PROPERTIES = "app.properties";
+    private static final String CONTROLLERS_PACKAGE = "controllers";
+
     private Invoker invoker;
 
     @Override
@@ -31,12 +34,12 @@ public class DispatcherServlet extends HttpServlet {
 
         Properties appConfig = new Properties();
         try {
-            appConfig.load(classLoader.getResourceAsStream("app.properties"));
+            appConfig.load(classLoader.getResourceAsStream(APP_PROPERTIES));
         } catch (IOException e) {
-            throw new ServletException("app.properties missing", e);
+            throw new ServletException(APP_PROPERTIES + " missing", e);
         }
 
-        String controllerPackage = appConfig.getProperty("controllerPackage");
+        String appPackage = appConfig.getProperty("package");
 
 
         Container container = new Container();
@@ -57,7 +60,8 @@ public class DispatcherServlet extends HttpServlet {
             }
         }
 
-        this.invoker = new Invoker(classLoader, controllerPackage, container);
+        String controllersPackage = appPackage != null? appPackage + "." + CONTROLLERS_PACKAGE : CONTROLLERS_PACKAGE;
+        this.invoker = new Invoker(classLoader, controllersPackage, container);
     }
 
     @Override
