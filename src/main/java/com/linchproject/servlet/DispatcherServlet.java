@@ -11,8 +11,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Properties;
+import java.util.Map;
 
 /**
  * @author Georg Schmidl
@@ -27,33 +26,19 @@ public class DispatcherServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         ClassLoader classLoader = getClass().getClassLoader();
+        AppConfig appConfig = AppConfig.load(classLoader, APP_PROPERTIES);
 
-        Properties appConfig = new Properties();
-        try {
-            appConfig.load(classLoader.getResourceAsStream(APP_PROPERTIES));
-        } catch (IOException e) {
-            throw new ServletException(APP_PROPERTIES + " missing", e);
-        }
-
-        String appPackage = appConfig.getProperty("package");
-
+        String appPackage = appConfig.get("package");
 
         Container container = new Container();
-
-        Enumeration<?> enumeration = appConfig.propertyNames();
-        while (enumeration.hasMoreElements()) {
-            String key = (String) enumeration.nextElement();
-
-            if (key.startsWith("component.")) {
-                String componentKey = key.substring(key.indexOf(".") + 1, key.length());
-                Class<?> componentClass;
-                try {
-                    componentClass = classLoader.loadClass(appConfig.getProperty(key));
-                } catch (ClassNotFoundException e) {
-                    throw new ServletException("class not found for component " + componentKey, e);
-                }
-                container.add(componentKey, componentClass);
+        for (Map.Entry<String, String> entry: appConfig.getMap("component.").entrySet()) {
+            Class<?> componentClass;
+            try {
+                componentClass = classLoader.loadClass(entry.getValue());
+            } catch (ClassNotFoundException e) {
+                throw new ServletException("class not found for component " + entry.getKey(), e);
             }
+            container.add(entry.getKey(), componentClass);
         }
 
         String controllersPackage = appPackage != null? appPackage + "." + CONTROLLERS_PACKAGE : CONTROLLERS_PACKAGE;
