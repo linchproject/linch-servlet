@@ -81,20 +81,12 @@ public class DispatcherServlet extends HttpServlet {
     protected Route getRoute(HttpServletRequest req) {
         Route route = new ServletRoute(req.getContextPath());
 
-        String uri = req.getRequestURI().substring(req.getContextPath().length() + 1);
-        String[] uriSplit = uri.split("/");
-        if (uriSplit.length > 0 && uriSplit[0].length() > 0) {
-            route.setController(uriSplit[0]);
+        String path = req.getRequestURI().substring(req.getContextPath().length() + 1);
+        if (req.getQueryString() != null) {
+            path += "?" + req.getQueryString();
         }
-        if (uriSplit.length > 1 && uriSplit[1].length() > 0) {
-            route.setAction(uriSplit[1]);
-        }
+        route.setPath(path);
 
-        if (uriSplit.length > 2 && uriSplit[2].length() > 0) {
-            route.setTail(uriSplit[2]);
-        }
-
-        route.setParameterMap(req.getParameterMap());
         return route;
     }
 
