@@ -4,17 +4,13 @@ import com.linchproject.core.Container;
 import com.linchproject.core.Invoker;
 import com.linchproject.core.Result;
 import com.linchproject.core.Route;
-import com.linchproject.core.results.Binary;
-import com.linchproject.core.results.Error;
-import com.linchproject.core.results.Redirect;
-import com.linchproject.core.results.Success;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Properties;
 
@@ -79,7 +75,7 @@ public class DispatcherServlet extends HttpServlet {
 
         Result result = invoker.invoke(route);
 
-        apply(result, request, response);
+        ReplierFactory.getReplier(result).reply(response);
     }
 
     protected Route getRoute(HttpServletRequest request) {
@@ -92,57 +88,5 @@ public class DispatcherServlet extends HttpServlet {
         route.setPath(path);
 
         return route;
-    }
-
-    protected void apply(Result result, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        if (result instanceof Success) {
-            Success success = (Success) result;
-
-            response.setContentType("text/html;charset=utf-8");
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.getWriter().println(success.getContent());
-
-        } else if (result instanceof Binary) {
-            InputStream inputStream = ((Binary) result).getInputStream();
-            OutputStream outputStream = response.getOutputStream();
-
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-            outputStream.close();
-            inputStream.close();
-
-        } else if (result instanceof Redirect) {
-            Redirect redirect = (Redirect) result;
-            Route route = redirect.getRoute();
-
-            response.sendRedirect(route.getUrl());
-        } else if (result instanceof Error) {
-            Error error = (Error) result;
-
-            response.setContentType("text/html;charset=utf-8");
-
-            String content = "<h1>" + error.getMessage() + "</h1>\n";
-            if (error.getException() != null) {
-                content += renderException(error.getException());
-                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            } else {
-                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            }
-
-            response.getWriter().println(content);
-        }
-    }
-
-    protected String renderException(Exception e) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        e.printStackTrace(pw);
-        String stackTrace = sw.toString();
-        return stackTrace
-                .replace(System.getProperty("line.separator"), "<br/>\n")
-                .replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
     }
 }
