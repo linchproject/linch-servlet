@@ -71,22 +71,8 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     protected void dispatch(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        Route route = getRoute(request);
-
+        Route route = new ServletRoute(request);
         Result result = invoker.invoke(route);
-
         ReplierFactory.getReplier(result).reply(response);
-    }
-
-    protected Route getRoute(HttpServletRequest request) {
-        Route route = new ServletRoute(request.getContextPath());
-
-        String path = request.getRequestURI().substring(request.getContextPath().length() + 1);
-        if (request.getQueryString() != null) {
-            path += "?" + request.getQueryString();
-        }
-        route.setPath(path);
-
-        return route;
     }
 }
