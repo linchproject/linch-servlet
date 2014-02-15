@@ -65,46 +65,46 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        dispatch(req, resp);
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        dispatch(request, response);
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        dispatch(req, resp);
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        dispatch(request, response);
     }
 
-    protected void dispatch(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
-        Route route = getRoute(req);
+    protected void dispatch(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        Route route = getRoute(request);
 
         Result result = invoker.invoke(route);
 
-        apply(result, req, resp);
+        apply(result, request, response);
     }
 
-    protected Route getRoute(HttpServletRequest req) {
-        Route route = new ServletRoute(req.getContextPath());
+    protected Route getRoute(HttpServletRequest request) {
+        Route route = new ServletRoute(request.getContextPath());
 
-        String path = req.getRequestURI().substring(req.getContextPath().length() + 1);
-        if (req.getQueryString() != null) {
-            path += "?" + req.getQueryString();
+        String path = request.getRequestURI().substring(request.getContextPath().length() + 1);
+        if (request.getQueryString() != null) {
+            path += "?" + request.getQueryString();
         }
         route.setPath(path);
 
         return route;
     }
 
-    protected void apply(Result result, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void apply(Result result, HttpServletRequest request, HttpServletResponse response) throws IOException {
         if (result instanceof Success) {
             Success success = (Success) result;
 
-            resp.setContentType("text/html;charset=utf-8");
-            resp.setStatus(HttpServletResponse.SC_OK);
-            resp.getWriter().println(success.getContent());
+            response.setContentType("text/html;charset=utf-8");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().println(success.getContent());
 
         } else if (result instanceof Binary) {
             InputStream inputStream = ((Binary) result).getInputStream();
-            OutputStream outputStream = resp.getOutputStream();
+            OutputStream outputStream = response.getOutputStream();
 
             byte[] buffer = new byte[1024];
             int bytesRead;
@@ -118,21 +118,21 @@ public class DispatcherServlet extends HttpServlet {
             Redirect redirect = (Redirect) result;
             Route route = redirect.getRoute();
 
-            resp.sendRedirect(route.getUrl());
+            response.sendRedirect(route.getUrl());
         } else if (result instanceof Error) {
             Error error = (Error) result;
 
-            resp.setContentType("text/html;charset=utf-8");
+            response.setContentType("text/html;charset=utf-8");
 
             String content = "<h1>" + error.getMessage() + "</h1>\n";
             if (error.getException() != null) {
                 content += renderException(error.getException());
-                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             } else {
-                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             }
 
-            resp.getWriter().println(content);
+            response.getWriter().println(content);
         }
     }
 
