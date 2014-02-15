@@ -9,14 +9,12 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class ServletRoute extends Route {
 
-    public String contextPath;
+    private static String USER_ID_KEY = ServletRoute.class.getSimpleName() + "-user-id";
 
-    public ServletRoute(String contextPath) {
-        this.contextPath = contextPath;
-    }
+    public HttpServletRequest request;
 
     public ServletRoute(HttpServletRequest request) {
-        this(request.getContextPath());
+        this.request = request;
 
         String path = request.getRequestURI().substring(request.getContextPath().length() + 1);
         if (request.getQueryString() != null) {
@@ -27,12 +25,22 @@ public class ServletRoute extends Route {
 
     @Override
     public String getUrl() {
-        return this.contextPath + getPath();
+        return this.request.getContextPath() + getPath();
 
     }
 
     @Override
+    public String getUserId() {
+        return (String) request.getSession().getAttribute(USER_ID_KEY);
+    }
+
+    @Override
+    public void setUserId(String userId) {
+        request.getSession().setAttribute(USER_ID_KEY, userId);
+    }
+
+    @Override
     protected Route newRoute() {
-        return new ServletRoute(this.contextPath);
+        return new ServletRoute(request);
     }
 }
