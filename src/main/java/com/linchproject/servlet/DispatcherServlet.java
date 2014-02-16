@@ -1,5 +1,6 @@
 package com.linchproject.servlet;
 
+import com.linchproject.apps.AppConfig;
 import com.linchproject.core.Container;
 import com.linchproject.core.Invoker;
 import com.linchproject.core.Result;
@@ -26,11 +27,17 @@ public class DispatcherServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         ClassLoader classLoader = getClass().getClassLoader();
-        AppConfig appConfig = AppConfig.load(classLoader, APP_PROPERTIES);
+        AppConfig appConfig = null;
+        try {
+            appConfig = AppConfig.load(classLoader, APP_PROPERTIES);
+        } catch (IOException e) {
+            throw new ServletException("missing " + APP_PROPERTIES, e);
+        }
 
         String appPackage = appConfig.get("package");
 
         Container container = new Container();
+        container.add("appConfig", appConfig);
         for (Map.Entry<String, String> entry: appConfig.getMap("component.").entrySet()) {
             Class<?> componentClass;
             try {
