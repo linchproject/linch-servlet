@@ -1,9 +1,10 @@
 package com.linchproject.servlet;
 
-import com.linchproject.core.Container;
+import com.linchproject.core.Instantiator;
 import com.linchproject.core.Invoker;
 import com.linchproject.core.Result;
 import com.linchproject.core.Route;
+import com.linchproject.ioc.Container;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -26,7 +27,7 @@ public class DispatcherServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         ClassLoader classLoader = getClass().getClassLoader();
-        AppConfig appConfig = null;
+        AppConfig appConfig;
         try {
             appConfig = AppConfig.load(classLoader, APP_PROPERTIES);
         } catch (IOException e) {
@@ -35,7 +36,7 @@ public class DispatcherServlet extends HttpServlet {
 
         String appPackage = appConfig.get("package");
 
-        Container container = new Container();
+        final Container container = new Container();
         container.add("appConfig", appConfig);
         for (Map.Entry<String, String> entry: appConfig.getMap("component.").entrySet()) {
             Class<?> componentClass;
@@ -48,7 +49,14 @@ public class DispatcherServlet extends HttpServlet {
         }
 
         String controllersPackage = appPackage != null? appPackage + "." + CONTROLLERS_PACKAGE : CONTROLLERS_PACKAGE;
-        this.invoker = new Invoker(classLoader, controllersPackage, container);
+        this.invoker = new Invoker(classLoader, controllersPackage, new Instantiator() {
+            @Override
+            public Object instantiate(Class<?> clazz) throws InstantiationException, IllegalAccessException {
+                Object instance = clazz.newInstance();
+                container.autowire(instance);
+                return instance;
+            }
+        });
     }
 
     @Override
