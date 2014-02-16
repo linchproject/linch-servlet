@@ -1,6 +1,5 @@
 package com.linchproject.servlet;
 
-import com.linchproject.apps.AppConfig;
 import com.linchproject.core.Container;
 import com.linchproject.core.Invoker;
 import com.linchproject.core.Result;
