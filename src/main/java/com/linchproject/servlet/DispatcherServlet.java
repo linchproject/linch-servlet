@@ -1,5 +1,7 @@
 package com.linchproject.servlet;
 
+import com.linchproject.apps.App;
+import com.linchproject.apps.AppRegistry;
 import com.linchproject.core.Injector;
 import com.linchproject.core.Invoker;
 import com.linchproject.core.Result;
@@ -27,25 +29,32 @@ public class DispatcherServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         ClassLoader classLoader = getClass().getClassLoader();
-        AppConfig appConfig;
+
+        AppRegistry appRegistry = new AppRegistry();
+        appRegistry.loadFromClassPath();
+
+        App mainApp;
         try {
-            appConfig = AppConfig.load(classLoader, APP_PROPERTIES);
+            mainApp = App.load(classLoader, APP_PROPERTIES);
         } catch (IOException e) {
             throw new ServletException("missing " + APP_PROPERTIES, e);
         }
 
-        String appPackage = appConfig.get("package");
+        String appPackage = mainApp.get("package");
 
         final Container container = new Container();
-        container.add("appConfig", appConfig);
-        for (Map.Entry<String, String> entry: appConfig.getMap("component.").entrySet()) {
-            Class<?> componentClass;
-            try {
-                componentClass = classLoader.loadClass(entry.getValue());
-            } catch (ClassNotFoundException e) {
-                throw new ServletException("class not found for component " + entry.getKey(), e);
+        container.add("app", mainApp);
+
+        for (App app : appRegistry.getApps()) {
+            for (Map.Entry<String, String> entry: app.getMap("component.").entrySet()) {
+                Class<?> componentClass;
+                try {
+                    componentClass = classLoader.loadClass(entry.getValue());
+                } catch (ClassNotFoundException e) {
+                    throw new ServletException("class not found for component " + entry.getKey(), e);
+                }
+                container.add(entry.getKey(), componentClass);
             }
-            container.add(entry.getKey(), componentClass);
         }
 
         String controllersPackage = appPackage != null? appPackage + "." + CONTROLLERS_PACKAGE : CONTROLLERS_PACKAGE;
