@@ -1,6 +1,6 @@
 package com.linchproject.servlet;
 
-import com.linchproject.core.Instantiator;
+import com.linchproject.core.Injector;
 import com.linchproject.core.Invoker;
 import com.linchproject.core.Result;
 import com.linchproject.core.Route;
@@ -49,12 +49,10 @@ public class DispatcherServlet extends HttpServlet {
         }
 
         String controllersPackage = appPackage != null? appPackage + "." + CONTROLLERS_PACKAGE : CONTROLLERS_PACKAGE;
-        this.invoker = new Invoker(classLoader, controllersPackage, new Instantiator() {
+        this.invoker = new Invoker(classLoader, controllersPackage, new Injector() {
             @Override
-            public Object instantiate(Class<?> clazz) throws InstantiationException, IllegalAccessException {
-                Object instance = clazz.newInstance();
-                container.autowire(instance);
-                return instance;
+            public void inject(Object object) {
+                container.inject(object);
             }
         });
     }
