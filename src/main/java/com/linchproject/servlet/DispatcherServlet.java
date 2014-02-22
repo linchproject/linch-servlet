@@ -22,9 +22,10 @@ import java.util.Map;
 public class DispatcherServlet extends HttpServlet {
 
     private static final String APP_PROPERTIES = "app.properties";
-    private static final String CONTROLLERS_PACKAGE = "controllers";
+    private static final String CONTROLLER_SUB_PACKAGE = "controllers";
 
     private Invoker invoker;
+    private String appPackage;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -40,7 +41,7 @@ public class DispatcherServlet extends HttpServlet {
             throw new ServletException("missing " + APP_PROPERTIES, e);
         }
 
-        String appPackage = mainApp.get("package");
+        appPackage = mainApp.get("package");
 
         final Container container = new Container();
         container.add("app", mainApp);
@@ -57,8 +58,7 @@ public class DispatcherServlet extends HttpServlet {
             }
         }
 
-        String controllersPackage = appPackage != null? appPackage + "." + CONTROLLERS_PACKAGE : CONTROLLERS_PACKAGE;
-        this.invoker = new Invoker(classLoader, controllersPackage, new Injector() {
+        this.invoker = new Invoker(classLoader, new Injector() {
             @Override
             public void inject(Object object) {
                 container.inject(object);
@@ -77,7 +77,11 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     protected void dispatch(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        String controllersPackage = appPackage != null? appPackage + "." + CONTROLLER_SUB_PACKAGE : CONTROLLER_SUB_PACKAGE;
+
         Route route = new ServletRoute(request);
+        route.setControllerPackage(controllersPackage);
+
         Result result = invoker.invoke(route);
         ReplierFactory.getReplier(result).reply(response);
     }
