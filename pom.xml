@@ -32,6 +32,11 @@
             <artifactId>linch-apps</artifactId>
             <version>0.1-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.linchproject</groupId>
+            <artifactId>linch-http</artifactId>
+            <version>0.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -45,6 +45,8 @@ public class DispatcherServlet extends HttpServlet {
 
         final Container container = new Container();
         container.add("app", mainApp);
+        container.add("sessionService", ServletSessionService.class);
+        container.add("cookieService", ServletCookieService.class);
 
         for (App app : appRegistry.getApps()) {
             for (Map.Entry<String, String> entry: app.getMap("component.").entrySet()) {
@@ -77,6 +79,9 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     protected void dispatch(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        ServletThreadLocal.setRequest(request);
+        ServletThreadLocal.setResponse(response);
+
         String controllersPackage = appPackage != null? appPackage + "." + CONTROLLER_SUB_PACKAGE : CONTROLLER_SUB_PACKAGE;
 
         Route route = new ServletRoute(request);
@@ -84,5 +89,8 @@ public class DispatcherServlet extends HttpServlet {
 
         Result result = invoker.invoke(route);
         ReplierFactory.getReplier(result).reply(response);
+
+        ServletThreadLocal.removeRequest();
+        ServletThreadLocal.removeResponse();
     }
 }
