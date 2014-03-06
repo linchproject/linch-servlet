@@ -22,21 +22,8 @@ import java.util.Map;
  */
 public class DispatcherServlet extends HttpServlet {
 
-    public enum Environment {
-        DEV, PROD
-    }
-
     private static final String APP_PROPERTIES = "app.properties";
     private static final String CONTROLLER_SUB_PACKAGE = "controllers";
-
-    private static Environment environment = Environment.PROD;
-
-    static {
-        String environmentProperty = System.getProperty("com.linchproject.environment");
-        if (environmentProperty != null && "development".equals(environmentProperty)) {
-            environment = Environment.DEV;
-        }
-    }
 
     private ClassLoader classLoader;
     private AppRegistry appRegistry;
@@ -45,12 +32,11 @@ public class DispatcherServlet extends HttpServlet {
     private App mainApp;
 
     private Container container;
-    private Invoker invoker;
+    private InvokerWrapper invokerWrapper;
 
     @Override
     public void init() throws ServletException {
         classLoader = getClass().getClassLoader();
-
         appRegistry = new AppRegistry();
         appRegistry.loadFromClassPath();
 
@@ -62,9 +48,11 @@ public class DispatcherServlet extends HttpServlet {
 
         dataSource = createDataSource();
 
-        if (Environment.PROD.equals(environment)) {
-            container = createContainer(classLoader);
-            invoker = createInvoker(classLoader, container);
+        String devProperty = System.getProperty("com.linchproject.dev");
+        if (devProperty != null && "true".equals(devProperty)) {
+            invokerWrapper = new DevelopmentInvokerWrapper();
+        } else {
+            invokerWrapper = new ProductionInvokerWrapper();
         }
     }
 
@@ -88,24 +76,9 @@ public class DispatcherServlet extends HttpServlet {
         Route route = new ServletRoute(request);
         route.setControllerPackage(controllersPackage);
 
-        Container container;
-        Invoker invoker;
+        Result result = invokerWrapper.invoke(route);
 
-        if (Environment.DEV.equals(environment)) {
-            DynamicClassLoader dynamicClassLoader = new DynamicClassLoader(classLoader, appPackage);
-            container = createContainer(dynamicClassLoader);
-            invoker = createInvoker(dynamicClassLoader, container);
-        } else {
-            container = this.container;
-            invoker = this.invoker;
-        }
-
-        Result result = invoker.invoke(route);
         ReplierFactory.getReplier(result).reply(response);
-
-        if (Environment.DEV.equals(environment)) {
-            container.clear();
-        }
 
         ServletThreadLocal.removeRequest();
         ServletThreadLocal.removeResponse();
@@ -134,15 +107,6 @@ public class DispatcherServlet extends HttpServlet {
         return container;
     }
 
-    private Invoker createInvoker(ClassLoader classLoader, final Container container) throws ServletException {
-        return new Invoker(classLoader, new Injector() {
-            @Override
-            public void inject(Object object) {
-                container.inject(object);
-            }
-        });
-    }
-
     private ComboPooledDataSource createDataSource() throws ServletException {
         ComboPooledDataSource comboPooledDataSource = new ComboPooledDataSource();
         try {
@@ -164,5 +128,48 @@ public class DispatcherServlet extends HttpServlet {
         if (dataSource != null) {
             dataSource.close();
         }
+    }
+
+    public interface InvokerWrapper {
+        public Result invoke(Route route) throws ServletException;
+    }
+
+    public class ProductionInvokerWrapper implements InvokerWrapper {
+
+        private Invoker invoker;
+
+        public ProductionInvokerWrapper() throws ServletException {
+            DispatcherServlet.this.container = createContainer(classLoader);
+            this.invoker = createInvoker(classLoader, container);
+        }
+
+        @Override
+        public Result invoke(Route route) {
+            return invoker.invoke(route);
+        }
+    }
+
+    public class DevelopmentInvokerWrapper implements InvokerWrapper {
+
+        @Override
+        public Result invoke(Route route) throws ServletException {
+            ClassLoader dynamicClassLoader = new DynamicClassLoader(classLoader, mainApp.get("package"));
+            Container container = createContainer(dynamicClassLoader);
+            Invoker invoker = createInvoker(dynamicClassLoader, container);
+
+            Result result = invoker.invoke(route);
+
+            container.clear();
+            return result;
+        }
+    }
+
+    private Invoker createInvoker(ClassLoader classLoader, final Container container) throws ServletException {
+        return new Invoker(classLoader, new Injector() {
+            @Override
+            public void inject(Object object) {
+                container.inject(object);
+            }
+        });
     }
 }
