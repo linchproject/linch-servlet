@@ -7,11 +7,13 @@ import com.linchproject.core.Invoker;
 import com.linchproject.core.Result;
 import com.linchproject.core.Route;
 import com.linchproject.ioc.Container;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.Map;
 
@@ -38,6 +40,7 @@ public class DispatcherServlet extends HttpServlet {
 
     private ClassLoader classLoader;
     private AppRegistry appRegistry;
+    private ComboPooledDataSource dataSource;
 
     private App mainApp;
 
@@ -56,6 +59,8 @@ public class DispatcherServlet extends HttpServlet {
         } catch (IOException e) {
             throw new ServletException("missing " + APP_PROPERTIES, e);
         }
+
+        dataSource = createDataSource();
 
         if (Environment.PROD.equals(environment)) {
             container = createContainer(classLoader);
@@ -110,6 +115,7 @@ public class DispatcherServlet extends HttpServlet {
         Container container = new Container();
 
         container.add("app", mainApp);
+        container.add("dataSource", dataSource);
         container.add("classLoader", classLoader);
         container.add("sessionService", ServletSessionService.class);
         container.add("cookieService", ServletCookieService.class);
@@ -137,10 +143,26 @@ public class DispatcherServlet extends HttpServlet {
         });
     }
 
+    private ComboPooledDataSource createDataSource() throws ServletException {
+        ComboPooledDataSource comboPooledDataSource = new ComboPooledDataSource();
+        try {
+            comboPooledDataSource.setDriverClass(mainApp.get("jdbc.driver"));
+            comboPooledDataSource.setJdbcUrl(mainApp.get("jdbc.url"));
+            comboPooledDataSource.setUser(mainApp.get("jdbc.user"));
+            comboPooledDataSource.setPassword(mainApp.get("jdbc.password"));
+        } catch (PropertyVetoException e) {
+            throw new ServletException("error creating datasource", e);
+        }
+        return comboPooledDataSource;
+    }
+
     @Override
     public void destroy() {
         if (container != null) {
             container.clear();
+        }
+        if (dataSource != null) {
+            dataSource.close();
         }
     }
 }
