@@ -110,6 +110,7 @@ public class DispatcherServlet extends HttpServlet {
         Container container = new Container();
 
         container.add("app", mainApp);
+        container.add("classLoader", classLoader);
         container.add("sessionService", ServletSessionService.class);
         container.add("cookieService", ServletCookieService.class);
 
