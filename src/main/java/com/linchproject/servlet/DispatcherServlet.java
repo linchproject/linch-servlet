@@ -6,6 +6,7 @@ import com.linchproject.core.Injector;
 import com.linchproject.core.Invoker;
 import com.linchproject.core.Result;
 import com.linchproject.core.Route;
+import com.linchproject.dev.DynamicClassLoader;
 import com.linchproject.ioc.Container;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
