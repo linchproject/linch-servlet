@@ -61,6 +61,19 @@ public class DynamicClassLoader extends ClassLoader {
         return clazz;
     }
 
+    @Override
+    public InputStream getResourceAsStream(String name) {
+        File file = new File("src" + File.separator + "main" + File.separator + "resources", name);
+
+        InputStream inputStream;
+        try {
+            inputStream = new FileInputStream(file);
+        } catch (FileNotFoundException e) {
+            inputStream = super.getResourceAsStream(name);
+        }
+        return inputStream;
+    }
+
     protected static InputStream getClassFileAsStream(String classFileName) {
         InputStream inputStream = null;
         try {
@@ -120,5 +133,4 @@ public class DynamicClassLoader extends ClassLoader {
         }
         return sb.toString();
     }
-
 }
