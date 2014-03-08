@@ -1,10 +1,9 @@
-package com.linchproject.servlet;
+package com.linchproject.servlet.services;
 
 import com.linchproject.http.CookieService;
+import com.linchproject.servlet.ServletThreadLocal;
 
 import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author Georg Schmidl
@@ -13,11 +12,9 @@ public class ServletCookieService implements CookieService {
 
     @Override
     public void addCookie(String name, String value, int maxAge) {
-        HttpServletResponse response = ServletThreadLocal.getResponse();
-
         Cookie cookie = new Cookie(name, value);
         cookie.setMaxAge(maxAge);
-        response.addCookie(cookie);
+        ServletThreadLocal.getResponse().addCookie(cookie);
     }
 
     @Override
@@ -27,11 +24,9 @@ public class ServletCookieService implements CookieService {
 
     @Override
     public String getCookieValue(String name) {
-        HttpServletRequest request =  ServletThreadLocal.getRequest();
-
         String value = null;
 
-        Cookie[] cookies = request.getCookies();
+        Cookie[] cookies = ServletThreadLocal.getRequest().getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if (name.equals(cookie.getName())) {

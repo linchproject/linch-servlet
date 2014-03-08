@@ -7,6 +7,9 @@ import com.linchproject.core.Route;
 import com.linchproject.core.results.Error;
 import com.linchproject.dev.DynamicClassLoader;
 import com.linchproject.ioc.Container;
+import com.linchproject.servlet.services.ServletCookieService;
+import com.linchproject.servlet.services.ServletLocaleService;
+import com.linchproject.servlet.services.ServletSessionService;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import javax.servlet.ServletException;
@@ -99,6 +102,7 @@ public class DispatcherServlet extends HttpServlet {
         container.add("classLoader", classLoader);
         container.add("sessionService", ServletSessionService.class);
         container.add("cookieService", ServletCookieService.class);
+        container.add("localeService", ServletLocaleService.class);
 
         if (componentPropertiesList != null) {
             for (Properties componentProperties : componentPropertiesList) {
