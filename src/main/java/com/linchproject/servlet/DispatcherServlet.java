@@ -93,7 +93,9 @@ public class DispatcherServlet extends HttpServlet {
     private Container createContainer(ClassLoader classLoader) throws ServletException {
         Container container = new Container();
 
-        container.add("dataSource", dataSource);
+        if (dataSource != null) {
+            container.add("dataSource", dataSource);
+        }
         container.add("classLoader", classLoader);
         container.add("sessionService", ServletSessionService.class);
         container.add("cookieService", ServletCookieService.class);
