@@ -214,11 +214,11 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     private void loadAppProperties() throws ServletException {
-        appProperties = loadProperties(classLoader, "linch-app.properties");
+        appProperties = loadProperties(classLoader, "app.properties");
     }
 
     private void loadDbProperties() throws ServletException {
-        dbProperties = loadProperties(classLoader, "linch-db.properties");
+        dbProperties = loadProperties(classLoader, "db.properties");
     }
 
     private void loadComponentProperties() throws ServletException {
@@ -227,7 +227,7 @@ public class DispatcherServlet extends HttpServlet {
         URLClassLoader contextClassLoader = (URLClassLoader)Thread.currentThread().getContextClassLoader();
         for (URL url : contextClassLoader.getURLs()) {
             URLClassLoader urlClassLoader = new URLClassLoader(new URL[] { url });
-            Properties componentProperties = loadProperties(urlClassLoader, "linch-components.properties");
+            Properties componentProperties = loadProperties(urlClassLoader, "components.properties");
             if (componentProperties != null) {
                 componentPropertiesList.add(componentProperties);
             }
