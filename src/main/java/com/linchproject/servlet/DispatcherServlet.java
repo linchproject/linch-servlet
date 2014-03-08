@@ -6,6 +6,7 @@ import com.linchproject.core.Injector;
 import com.linchproject.core.Invoker;
 import com.linchproject.core.Result;
 import com.linchproject.core.Route;
+import com.linchproject.core.results.Error;
 import com.linchproject.dev.DynamicClassLoader;
 import com.linchproject.ioc.Container;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
@@ -146,7 +147,17 @@ public class DispatcherServlet extends HttpServlet {
 
         @Override
         public Result invoke(Route route) {
-            return invoker.invoke(route);
+            container.begin();
+
+            Result result = invoker.invoke(route);
+
+            if (!(result instanceof com.linchproject.core.results.Error)) {
+                container.commit();
+            } else {
+                container.rollback();
+            }
+
+            return result;
         }
     }
 
@@ -158,7 +169,15 @@ public class DispatcherServlet extends HttpServlet {
             Container container = createContainer(dynamicClassLoader);
             Invoker invoker = createInvoker(dynamicClassLoader, container);
 
+            container.begin();
+
             Result result = invoker.invoke(route);
+
+            if (!(result instanceof Error)) {
+                container.commit();
+            } else {
+                container.rollback();
+            }
 
             container.clear();
             return result;
