@@ -11,6 +11,8 @@ import com.linchproject.servlet.services.ServletCookieService;
 import com.linchproject.servlet.services.ServletLocaleService;
 import com.linchproject.servlet.services.ServletSessionService;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -31,6 +33,8 @@ import java.util.Properties;
  */
 public class DispatcherServlet extends HttpServlet {
 
+    private static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
+
     private static final String CONTROLLER_SUB_PACKAGE = "controllers";
 
     private ClassLoader classLoader;
@@ -45,6 +49,7 @@ public class DispatcherServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
+        log.info("initializing");
         classLoader = getClass().getClassLoader();
 
         loadAppProperties();
@@ -94,6 +99,7 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     private Container createContainer(ClassLoader classLoader) throws ServletException {
+        log.info("creating IOC container");
         Container container = new Container();
 
         if (dataSource != null) {
@@ -117,6 +123,7 @@ public class DispatcherServlet extends HttpServlet {
                     } catch (ClassNotFoundException e) {
                         throw new ServletException("error loading class for component " + componentName, e);
                     }
+                    log.debug("adding component {} to container ", componentClassName);
                     container.add(componentName, componentClass);
                 }
             }
@@ -125,6 +132,7 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     private ComboPooledDataSource createDataSource() throws ServletException {
+        log.info("creating datasource");
         ComboPooledDataSource comboPooledDataSource = null;
 
         if (dbProperties != null) {
@@ -205,6 +213,7 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     private Invoker createInvoker(ClassLoader classLoader, final Container container) throws ServletException {
+        log.info("creating invoker");
         return new Invoker(classLoader, new Injector() {
             @Override
             public void inject(Object object) {
@@ -214,19 +223,23 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     private void loadAppProperties() throws ServletException {
+        log.info("loading ap.properties");
         appProperties = loadProperties(classLoader, "app.properties");
     }
 
     private void loadDbProperties() throws ServletException {
+        log.info("loading db.properties");
         dbProperties = loadProperties(classLoader, "db.properties");
     }
 
     private void loadComponentProperties() throws ServletException {
+        log.info("loading components.properties");
         componentPropertiesList = new ArrayList<Properties>();
 
         URLClassLoader contextClassLoader = (URLClassLoader)Thread.currentThread().getContextClassLoader();
         for (URL url : contextClassLoader.getURLs()) {
             URLClassLoader urlClassLoader = new URLClassLoader(new URL[] { url });
+            log.debug("loading components.properties from {}", url.toString());
             Properties componentProperties = loadProperties(urlClassLoader, "components.properties");
             if (componentProperties != null) {
                 componentPropertiesList.add(componentProperties);
