@@ -107,7 +107,6 @@ public class DispatcherServlet extends HttpServlet {
         if (dataSource != null) {
             container.add("dataSource", dataSource);
         }
-        container.add("classLoader", classLoader);
         container.add("sessionService", ServletSessionService.class);
         container.add("cookieService", ServletCookieService.class);
         container.add("localeService", ServletLocaleService.class);
@@ -189,6 +188,7 @@ public class DispatcherServlet extends HttpServlet {
         public Result invoke(Route route) throws ServletException {
             ClassLoader dynamicClassLoader = new DynamicClassLoader(classLoader, appProperties.getProperty("package"));
             Container container = createContainer(dynamicClassLoader);
+            container.add("classLoader", dynamicClassLoader);
             Invoker invoker = createInvoker(dynamicClassLoader, container);
 
             container.begin();
