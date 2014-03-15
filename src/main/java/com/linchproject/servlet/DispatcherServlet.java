@@ -10,15 +10,17 @@ import com.linchproject.ioc.Container;
 import com.linchproject.servlet.services.ServletCookieService;
 import com.linchproject.servlet.services.ServletLocaleService;
 import com.linchproject.servlet.services.ServletSessionService;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.beans.PropertyVetoException;
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -38,7 +40,7 @@ public class DispatcherServlet extends HttpServlet {
     private static final String CONTROLLER_SUB_PACKAGE = "controllers";
 
     private ClassLoader classLoader;
-    private ComboPooledDataSource dataSource;
+    private DataSource dataSource;
 
     private Container container;
     private InvokerWrapper invokerWrapper;
@@ -60,7 +62,7 @@ public class DispatcherServlet extends HttpServlet {
             throw new ServletException("linch-app.properties is missing");
         }
 
-        dataSource = createDataSource();
+        dataSource = getDataSource();
 
         String devProperty = System.getProperty("com.linchproject.dev");
         if (devProperty != null && "true".equals(devProperty)) {
@@ -131,32 +133,24 @@ public class DispatcherServlet extends HttpServlet {
         return container;
     }
 
-    private ComboPooledDataSource createDataSource() throws ServletException {
-        log.info("creating datasource");
-        ComboPooledDataSource comboPooledDataSource = null;
+    private DataSource getDataSource() throws ServletException {
+        log.info("loading dataSource");
+        DataSource dataSource = null;
 
-        if (dbProperties != null) {
-            comboPooledDataSource = new ComboPooledDataSource();
-            try {
-                comboPooledDataSource.setDriverClass(dbProperties.getProperty("jdbc.driver"));
-                comboPooledDataSource.setJdbcUrl(dbProperties.getProperty("jdbc.url"));
-                comboPooledDataSource.setUser(dbProperties.getProperty("jdbc.user"));
-                comboPooledDataSource.setPassword(dbProperties.getProperty("jdbc.password"));
-            } catch (PropertyVetoException e) {
-                throw new ServletException("error creating datasource", e);
-            }
-
+        try {
+            Context ctx = new InitialContext();
+            dataSource = (DataSource) ctx.lookup("jdbc/linch");
+        } catch (NamingException e) {
+            log.warn("no resource found with name 'jdbc/linch'");
         }
-        return comboPooledDataSource;
+
+        return dataSource;
     }
 
     @Override
     public void destroy() {
         if (container != null) {
             container.clear();
-        }
-        if (dataSource != null) {
-            dataSource.close();
         }
     }
 
