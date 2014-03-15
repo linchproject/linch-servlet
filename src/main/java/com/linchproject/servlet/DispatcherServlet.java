@@ -139,7 +139,7 @@ public class DispatcherServlet extends HttpServlet {
 
         try {
             Context ctx = new InitialContext();
-            dataSource = (DataSource) ctx.lookup("jdbc/linch");
+            dataSource = (DataSource) ctx.lookup("java:comp/env/jdbc/linch");
         } catch (NamingException e) {
             log.warn("no resource found with name 'jdbc/linch'");
         }
