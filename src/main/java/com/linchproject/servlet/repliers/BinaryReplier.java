@@ -1,6 +1,7 @@
 package com.linchproject.servlet.repliers;
 
 import com.linchproject.core.results.Binary;
+import com.linchproject.servlet.Environment;
 import com.linchproject.servlet.Replier;
 
 import javax.servlet.http.HttpServletResponse;
@@ -21,6 +22,13 @@ public class BinaryReplier implements Replier {
 
     @Override
     public void reply(HttpServletResponse response) throws IOException {
+        if (Environment.DEV) {
+            response.setHeader("Cache-Control", "no-cache, no-store");
+        } else {
+            response.setHeader("Cache-Control", "public; max-age=3600");
+            response.setDateHeader("Expires", System.currentTimeMillis() + 3600 * 1000);
+        }
+
         InputStream inputStream = binary.getInputStream();
         OutputStream outputStream = response.getOutputStream();
 

@@ -64,8 +64,7 @@ public class DispatcherServlet extends HttpServlet {
 
         dataSource = getDataSource();
 
-        String devProperty = System.getProperty("com.linchproject.dev");
-        if (devProperty != null && "true".equals(devProperty)) {
+        if (Environment.DEV) {
             invokerWrapper = new DevelopmentInvokerWrapper();
         } else {
             invokerWrapper = new ProductionInvokerWrapper();
