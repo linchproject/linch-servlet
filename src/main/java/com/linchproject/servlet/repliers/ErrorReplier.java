@@ -3,6 +3,8 @@ package com.linchproject.servlet.repliers;
 import com.linchproject.core.results.Error;
 import com.linchproject.servlet.Replier;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -20,7 +22,7 @@ public class ErrorReplier implements Replier {
     }
 
     @Override
-    public void reply(HttpServletResponse response) throws IOException {
+    public void reply(HttpServletRequest request, HttpServletResponse response, ServletContext servletContext) throws IOException {
         response.setContentType("text/html;charset=utf-8");
 
         String content = "<h1>" + error.getMessage() + "</h1>\n";

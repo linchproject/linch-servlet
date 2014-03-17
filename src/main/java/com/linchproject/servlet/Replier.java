@@ -1,5 +1,7 @@
 package com.linchproject.servlet;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
@@ -8,5 +10,5 @@ import java.io.IOException;
  */
 public interface Replier {
 
-    void reply(HttpServletResponse response) throws IOException;
+    void reply(HttpServletRequest request, HttpServletResponse response, ServletContext servletContext) throws IOException;
 }

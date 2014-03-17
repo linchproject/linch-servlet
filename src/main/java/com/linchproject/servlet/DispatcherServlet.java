@@ -93,7 +93,7 @@ public class DispatcherServlet extends HttpServlet {
 
         Result result = invokerWrapper.invoke(route);
 
-        ReplierFactory.getReplier(result).reply(response);
+        ReplierFactory.getReplier(result).reply(request, response, getServletContext());
 
         ServletThreadLocal.removeRequest();
         ServletThreadLocal.removeResponse();
