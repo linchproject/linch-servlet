@@ -46,7 +46,6 @@ public class DispatcherServlet extends HttpServlet {
     private InvokerWrapper invokerWrapper;
 
     private Properties appProperties;
-    private Properties dbProperties;
     private List<Properties> componentPropertiesList;
 
     @Override
@@ -55,7 +54,6 @@ public class DispatcherServlet extends HttpServlet {
         classLoader = getClass().getClassLoader();
 
         loadAppProperties();
-        loadDbProperties();
         loadComponentProperties();
 
         if (appProperties == null) {
@@ -218,11 +216,6 @@ public class DispatcherServlet extends HttpServlet {
     private void loadAppProperties() throws ServletException {
         log.info("loading ap.properties");
         appProperties = loadProperties(classLoader, "app.properties");
-    }
-
-    private void loadDbProperties() throws ServletException {
-        log.info("loading db.properties");
-        dbProperties = loadProperties(classLoader, "db.properties");
     }
 
     private void loadComponentProperties() throws ServletException {
