@@ -37,15 +37,13 @@ public class DispatcherServlet extends HttpServlet {
 
     private static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
 
-    private static final String CONTROLLER_SUB_PACKAGE = "controllers";
-
     private ClassLoader classLoader;
     private DataSource dataSource;
 
     private Container container;
     private InvokerWrapper invokerWrapper;
 
-    private Properties appProperties;
+    private String mainApp;
     private List<Properties> componentPropertiesList;
 
     @Override
@@ -53,12 +51,12 @@ public class DispatcherServlet extends HttpServlet {
         log.info("initializing");
         classLoader = getClass().getClassLoader();
 
-        loadAppProperties();
-        loadComponentProperties();
-
-        if (appProperties == null) {
-            throw new ServletException("linch-app.properties is missing");
+        mainApp = getServletConfig().getInitParameter("mainApp");
+        if (mainApp == null) {
+            throw new ServletException("mainApp is not configured");
         }
+
+        loadComponentProperties();
 
         dataSource = getDataSource();
 
@@ -83,8 +81,7 @@ public class DispatcherServlet extends HttpServlet {
         ServletThreadLocal.setRequest(request);
         ServletThreadLocal.setResponse(response);
 
-        String appPackage = appProperties.getProperty("package");
-        String controllersPackage = appPackage != null? appPackage + "." + CONTROLLER_SUB_PACKAGE : CONTROLLER_SUB_PACKAGE;
+        String controllersPackage = mainApp + "." + "controllers";
 
         Route route = new ServletRoute(request);
         route.setControllerPackage(controllersPackage);
@@ -183,7 +180,7 @@ public class DispatcherServlet extends HttpServlet {
 
         @Override
         public Result invoke(Route route) throws ServletException {
-            ClassLoader dynamicClassLoader = new DynamicClassLoader(classLoader, appProperties.getProperty("package"));
+            ClassLoader dynamicClassLoader = new DynamicClassLoader(classLoader, mainApp);
             Container container = createContainer(dynamicClassLoader);
             container.add("classLoader", dynamicClassLoader);
             Invoker invoker = createInvoker(dynamicClassLoader, container);
@@ -211,11 +208,6 @@ public class DispatcherServlet extends HttpServlet {
                 container.inject(object);
             }
         });
-    }
-
-    private void loadAppProperties() throws ServletException {
-        log.info("loading ap.properties");
-        appProperties = loadProperties(classLoader, "app.properties");
     }
 
     private void loadComponentProperties() throws ServletException {
