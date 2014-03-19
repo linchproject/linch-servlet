@@ -1,6 +1,7 @@
 package com.linchproject.servlet.repliers;
 
 import com.linchproject.core.results.Error;
+import com.linchproject.servlet.Environment;
 import com.linchproject.servlet.Replier;
 
 import javax.servlet.ServletContext;
@@ -25,15 +26,20 @@ public class ErrorReplier implements Replier {
     public void reply(HttpServletRequest request, HttpServletResponse response, ServletContext servletContext) throws IOException {
         response.setContentType("text/html;charset=utf-8");
 
-        String content = "<h1>" + error.getMessage() + "</h1>\n";
-        if (error.getException() != null) {
-            content += renderException(error.getException());
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        } else {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        }
+        if (Environment.DEV) {
+            String content = "<h1>" + error.getMessage() + "</h1>\n";
+            if (error.getException() != null) {
+                content += renderException(error.getException());
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
-        response.getWriter().println(content);
+            } else {
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            }
+
+            response.getWriter().println(content);
+        } else {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+        }
     }
 
     protected String renderException(Exception e) {
