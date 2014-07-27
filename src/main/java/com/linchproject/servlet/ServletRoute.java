@@ -10,16 +10,21 @@ import java.util.Map;
  */
 public class ServletRoute extends Route {
 
-    public HttpServletRequest request;
+    private HttpServletRequest request;
 
     public ServletRoute(HttpServletRequest request) {
         this.request = request;
 
-        String path = request.getRequestURI().substring(request.getContextPath().length() + 1);
+        String path = request.getRequestURI().substring(request.getContextPath().length());
         if (!request.getParameterMap().isEmpty()) {
             path += "?" + getQueryString(request.getParameterMap());
         }
         setPath(path);
+    }
+
+    public ServletRoute(HttpServletRequest request, String controllerPackage) {
+        this(request);
+        setControllerPackage(controllerPackage);
     }
 
     private String getQueryString(Map<String, String[]> map) {
@@ -46,6 +51,6 @@ public class ServletRoute extends Route {
 
     @Override
     protected Route newRoute() {
-        return new ServletRoute(request);
+        return new ServletRoute(this.request);
     }
 }

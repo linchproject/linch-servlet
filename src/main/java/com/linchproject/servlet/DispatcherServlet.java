@@ -83,8 +83,7 @@ public class DispatcherServlet extends HttpServlet {
 
         String controllersPackage = mainApp + "." + "controllers";
 
-        Route route = new ServletRoute(request);
-        route.setControllerPackage(controllersPackage);
+        Route route = new ServletRoute(request, controllersPackage);
 
         Result result = invokerWrapper.invoke(route);
 
